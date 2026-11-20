@@ -14,6 +14,7 @@ and manage a Kubernetes lab environment.
 - 1 Kubernetes Control Plane Node
 - 2 Kubernetes Worker Nodes
 - Ansible for configuration management and automation
+- Sonatype Nexus Repository for package and container image caching
 
 ## Technologies
 
@@ -22,6 +23,7 @@ and manage a Kubernetes lab environment.
 - Ansible
 - Docker
 - Kubernetes
+- Sonatype Nexus Repository
 
 ## Repository Structure
 
