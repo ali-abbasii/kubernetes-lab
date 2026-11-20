@@ -1,0 +1,32 @@
+---
+- name: Configure basic UFW firewall on Kubernetes nodes
+  hosts: kuber
+  become: true
+  gather_facts: false
+  serial: 1
+
+  tasks:
+    - name: Ensure UFW is installed
+      ansible.builtin.apt:
+        name: ufw
+        state: present
+
+    - name: Allow SSH connections
+      community.general.ufw:
+        rule: allow
+        port: '22'
+        proto: tcp
+
+    - name: Set default incoming policy to deny
+      community.general.ufw:
+        direction: incoming
+        default: deny
+
+    - name: Set default outgoing policy to allow
+      community.general.ufw:
+        direction: outgoing
+        default: allow
+
+    - name: Enable UFW
+      community.general.ufw:
+        state: enabled
