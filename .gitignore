@@ -1,0 +1,23 @@
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Ansible
+*.retry
+ansible/vault-password-file
+**/vault.yml
+**/vault.yaml
+
+# SSH private keys
+id_rsa
+id_ed25519
+*.pem
+
+# Kubernetes credentials
+kubeconfig
+**/admin.conf
+
+# Terraform state
+*.tfstate
+*.tfstate.*
