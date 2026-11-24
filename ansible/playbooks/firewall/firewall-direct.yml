@@ -1,0 +1,56 @@
+---
+- name: Configure UFW firewall for Direct Internet access
+  hosts: kuber
+  become: true
+  gather_facts: false
+  serial: 1
+
+  tasks:
+    - name: Allow SSH connections
+      community.general.ufw:
+        rule: allow
+        port: '22'
+        proto: tcp
+
+    - name: Allow Kubernetes API Server
+      community.general.ufw:
+        rule: allow
+        port: '6443'
+        proto: tcp
+        src: 192.168.56.0/24
+
+    - name: Allow etcd communication
+      community.general.ufw:
+        rule: allow
+        port: '2379:2380'
+        proto: tcp
+        src: 192.168.56.0/24
+
+    - name: Allow Kubelet API
+      community.general.ufw:
+        rule: allow
+        port: '10250'
+        proto: tcp
+        src: 192.168.56.0/24
+
+    - name: Allow Flannel VXLAN
+      community.general.ufw:
+        rule: allow
+        port: '8472'
+        proto: udp
+        src: 192.168.56.0/24
+
+    - name: Set default incoming policy to deny
+      community.general.ufw:
+        direction: incoming
+        default: deny
+
+    - name: Allow outgoing traffic
+      community.general.ufw:
+        direction: outgoing
+        default: allow
+
+    - name: Enable UFW
+      community.general.ufw:
+        state: enabled
+
