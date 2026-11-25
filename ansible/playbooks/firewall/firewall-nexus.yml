@@ -1,15 +1,27 @@
 ---
-- name: Configure basic UFW firewall on Kubernetes nodes
+- name: Configure UFW firewall for Nexus-only repository access
   hosts: kuber
   become: true
   gather_facts: false
   serial: 1
 
   tasks:
-    - name: Ensure UFW is installed
-      ansible.builtin.apt:
-        name: ufw
-        state: present
+    - name: Configure Chrony NTP source
+      ansible.builtin.copy:
+        dest: /etc/chrony/sources.d/main-node.sources
+        content: |
+          server 192.168.56.20 iburst
+        owner: root
+        group: root
+        mode: '0644'
+      notify: Restart Chrony
+
+    - name: Disable Ubuntu default NTP pools
+      ansible.builtin.command:
+        cmd: mv /etc/chrony/sources.d/ubuntu-ntp-pools.sources /etc/chrony/sources.d/ubuntu-ntp-pools.sources.disabled
+        creates: /etc/chrony/sources.d/ubuntu-ntp-pools.sources.disabled
+        removes: /etc/chrony/sources.d/ubuntu-ntp-pools.sources
+      notify: Restart Chrony
 
     - name: Allow SSH connections
       community.general.ufw:
@@ -17,16 +29,67 @@
         port: '22'
         proto: tcp
 
+    - name: Allow Kubernetes API Server
+      community.general.ufw:
+        rule: allow
+        port: '6443'
+        proto: tcp
+        src: 192.168.56.0/24
+
+    - name: Allow etcd communication
+      community.general.ufw:
+        rule: allow
+        port: '2379:2380'
+        proto: tcp
+        src: 192.168.56.0/24
+
+    - name: Allow Kubelet API
+      community.general.ufw:
+        rule: allow
+        port: '10250'
+        proto: tcp
+        src: 192.168.56.0/24
+
+    - name: Allow Flannel VXLAN
+      community.general.ufw:
+        rule: allow
+        port: '8472'
+        proto: udp
+        src: 192.168.56.0/24
+
+    - name: Allow access to Nexus
+      community.general.ufw:
+        rule: allow
+        direction: out
+        dest: 192.168.56.20
+        port: '8081'
+        proto: tcp
+
+    - name: Allow NTP synchronization
+      community.general.ufw:
+        rule: allow
+        direction: out
+        dest: 192.168.56.20
+        port: '123'
+        proto: udp
+
     - name: Set default incoming policy to deny
       community.general.ufw:
         direction: incoming
         default: deny
 
-    - name: Set default outgoing policy to allow
+    - name: Set default outgoing policy to deny
       community.general.ufw:
         direction: outgoing
-        default: allow
+        default: deny
 
     - name: Enable UFW
       community.general.ufw:
         state: enabled
+        
+  handlers:
+    - name: Restart Chrony
+      ansible.builtin.service:
+        name: chrony
+        state: restarted
+        enabled: true
